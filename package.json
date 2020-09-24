@@ -1,0 +1,66 @@
+{
+  "name": "chat-app",
+  "license": "MIT",
+  "scripts": {
+    "predev": "npm run generate:prisma",
+    "dev": "cross-env NODE_ENV=development tsnd --no-notify --respawn --transpileOnly ./src",
+    "prebuild": "npm run clean && npm run generate",
+    "build": "tsc",
+    "seed": "ts-node prisma/seed.ts",
+    "clean": "rimraf dist",
+    "generate": "npm run generate:prisma && npm run generate:nexus",
+    "migrate": "npx prisma migrate save --name init --experimental && npx prisma migrate up --experimental",
+    "generate:prisma": "prisma generate",
+    "generate:nexus": "ts-node --transpile-only ./src/schema",
+    "start": "cross-env NODE_ENV=production node dist/src/index.js"
+  },
+  "dependencies": {
+    "@nexus/schema": "0.15.0",
+    "@prisma/client": "2.6.2",
+    "apollo-server": "2.17.0",
+    "dotenv": "8.2.0",
+    "nexus-prisma": "^0.12.0",
+    "bcryptjs": "^2.4.3",
+    "graphql": "15.3.0",
+    "graphql-iso-date": "3.6.1",
+    "graphql-middleware": "^4.0.2",
+    "graphql-redis-subscriptions": "^2.3.1",
+    "graphql-shield": "^7.3.6",
+    "graphql-subscriptions": "^1.1.0",
+    "jsonwebtoken": "^8.5.1"
+  },
+  "devDependencies": {
+    "@prisma/cli": "2.6.2",
+    "@types/bcryptjs": "^2.4.2",
+    "@types/jsonwebtoken": "^8.5.0",
+    "@types/node": "13.13.19",
+    "@types/prettier": "2.1.0",
+    "cross-env": "7.0.2",
+    "prettier": "2.1.1",
+    "rimraf": "3.0.2",
+    "ts-node": "9.0.0",
+    "ts-node-dev": "1.0.0-pre.50",
+    "typescript": "4.0.2"
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true
+  },
+  "description": "This example shows how to implement a **Subscriptions in TypeScript** based on  [Prisma Client](https://github.com/prisma/prisma2/blob/master/docs/prisma-client-js/api.md), [apollo-server](https://www.apollographql.com/docs/apollo-server/) and [Nexus Schema](https://www.nexusjs.org/#/guides/schema). It is based on a SQLite database, you can find the database file with some dummy data at [`./prisma/dev.db`](./prisma/dev.db).",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imran-ib/chat-app-server.git"
+  },
+  "keywords": [
+    "chat",
+    "subscriptions",
+    "graphql"
+  ],
+  "author": "Imran Irshad",
+  "bugs": {
+    "url": "https://github.com/imran-ib/chat-app-server/issues"
+  },
+  "homepage": "https://github.com/imran-ib/chat-app-server#readme"
+}
