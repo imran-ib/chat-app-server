@@ -1,24 +1,37 @@
 import * as nexus from '@nexus/schema'
 
-export const Post = nexus.objectType({
-  name: 'Post',
-  definition(t) {
-    t.model.id()
-    t.model.published()
-    t.model.title()
-    t.model.content()
-  },
-})
 export const User = nexus.objectType({
   name: 'User',
   definition(t) {
     t.model.id()
-    t.model.name()
     t.model.email()
-    t.model.posts()
-    t.field('Posts', {
-      type: 'Post',
-    })
+    t.model.avatar()
+    t.model.username()
+    t.model.friends()
+    t.model.MessagesRecieved()
+    t.model.MessagesSent()
+    t.model.followedBy()
+    t.model.following()
+    t.model.createdAt()
+    t.model.updatedAt()
+  },
+})
+
+export const Message = nexus.objectType({
+  name: 'Messages',
+  definition(t) {
+    t.model.id()
+    t.model.content()
+    t.model.image()
+    t.model.from()
+    t.model.SenderId()
+    t.model.to()
+    t.model.ReceiverId()
+    t.model.isSenderFriend()
+    t.model.isSenderFollowing()
+    t.model.isSenderFollowedBy()
+    t.model.createdAt()
+    t.model.updatedAt()
   },
 })
 

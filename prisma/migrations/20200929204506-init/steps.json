@@ -1,0 +1,21 @@
+{
+  "version": "0.3.14-fixed",
+  "steps": [
+    {
+      "tag": "DeleteModel",
+      "model": "OneTimePassword"
+    },
+    {
+      "tag": "CreateField",
+      "model": "User",
+      "field": "AuthToken",
+      "type": "Int",
+      "arity": "Optional"
+    },
+    {
+      "tag": "DeleteField",
+      "model": "User",
+      "field": "hasAuthToken"
+    }
+  ]
+}

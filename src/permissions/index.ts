@@ -1,28 +1,25 @@
-import { rule, shield } from "graphql-shield";
-import { getUserId } from "../utils";
+import { rule, shield } from 'graphql-shield'
+import { getUserId, getTokenFromReq } from '../utils'
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
 
 const rules = {
-  isAuthenticatedUser: rule()((parent, args, context) => {
-    const userId = getUserId(context);
-    return Boolean(userId);
+  isAuthenticatedUser: rule()(async (__parent, _args, context) => {
+    const userId = parseInt(getUserId(context))
+    const User = await prisma.user.findOne({ where: { id: userId } })
+    if (User) {
+      return true
+    } else {
+      return false
+    }
   }),
-
-  // isPostOwner: rule()(async (parent, { id }, context) => {
-  //   const userId = getUserId(context);
-  //   const author = await context.prisma.post
-  //     .findOne({
-  //       where: {
-  //         id: Number(id),
-  //       },
-  //     })
-  //     .author();
-  //   return userId === author.id;
-  // }),
-};
+}
 
 export const permissions = shield({
-  Query: {},
-  Mutation: {
-    createDraft: rules.isAuthenticatedUser,
+  Query: {
+    GetMessages: rules.isAuthenticatedUser,
   },
-});
+  Mutation: {
+    SentMessage: rules.isAuthenticatedUser,
+  },
+})

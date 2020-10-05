@@ -2,9 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import { PubSub } from 'apollo-server'
 import { Context } from './types'
 
-const prisma = new PrismaClient({
-  log: ['query'],
-})
+const prisma = new PrismaClient()
 const pubsub = new PubSub()
 
 export const createContext = (ctx: any): Context => {

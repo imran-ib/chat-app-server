@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = "***"
 }
 
 model User {
@@ -34,8 +34,8 @@ model Messages {
   image              String?
   from               User     @relation("Sender", fields: [SenderId], references: [id])
   SenderId           Int
-  to                 User     @relation("Reciever", fields: [ReceiverId], references: [id])
-  ReceiverId         Int
+  to                 User     @relation("Reciever", fields: [RecieverId], references: [id])
+  RecieverId         Int
   isSenderFriend     Boolean  @default(false)
   isSenderFollowing  Boolean  @default(false)
   isSenderFollowedBy Boolean  @default(false)

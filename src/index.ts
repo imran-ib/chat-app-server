@@ -14,6 +14,7 @@ const server = new ApolloServer({
   context: createContext,
   playground: true,
   cors: true,
+  tracing: true,
 })
 
 server.listen({ port: PORT }).then(({ url, subscriptionsUrl }) => {
