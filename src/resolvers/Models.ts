@@ -8,13 +8,33 @@ export const User = nexus.objectType({
     t.model.avatar()
     t.model.username()
     t.model.friends()
+
     t.model.MessagesRecieved()
     t.model.MessagesSent()
+    
     t.model.followedBy()
     t.model.following()
+    t.model.isActive()
+    t.model.lastSeen()
+    t.model.FriendRequestRecieved()
+    t.model.FriendRequsetSent()
     t.model.createdAt()
     t.model.updatedAt()
   },
+})
+
+export const FriendsRequests = nexus.objectType({
+  name:"FriendsRequest",
+  definition(t) {
+    t.model.id()
+    t.model.RequestReceiverId()
+    t.model.RequsetSenderId()
+    t.model.sender()
+    t.model.reciever()
+    t.model.createdAt()
+    t.model.updatedAt
+    
+  }
 })
 
 export const Message = nexus.objectType({
@@ -41,4 +61,13 @@ export const AuthPayload = nexus.objectType({
     t.string('token')
     t.field('user', { type: 'User' })
   },
+})
+
+export const FriendsPayload = nexus.objectType({
+  name:"FriendsPayload",
+  definition(t){
+    t.field('user', { type: 'User'  ,nullable: true,})
+    t.field('message', { type: 'Messages',nullable: true, list: true })
+
+  }
 })

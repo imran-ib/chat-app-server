@@ -9,7 +9,6 @@ interface Token {
 
 export function getUserId(context: any) {
   const Authorization = context.req.get('Authorization')
-
   if (Authorization) {
     const token = Authorization.replace('Bearer ', '')
 

@@ -1,8 +1,9 @@
-import { rule, shield } from 'graphql-shield'
-import { getUserId, getTokenFromReq } from '../utils'
+import { rule, shield, allow, or } from 'graphql-shield'
+import { getUserId } from '../utils'
 import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
-
+//@ts-ignore
+import format from 'date-format'
 const rules = {
   isAuthenticatedUser: rule()(async (__parent, _args, context) => {
     const userId = parseInt(getUserId(context))
@@ -18,8 +19,40 @@ const rules = {
 export const permissions = shield({
   Query: {
     GetMessages: rules.isAuthenticatedUser,
+    Friends: rules.isAuthenticatedUser,
   },
   Mutation: {
-    SentMessage: rules.isAuthenticatedUser,
+    SendMessage: rules.isAuthenticatedUser,
+    AddFriend: rules.isAuthenticatedUser,
+    ConfirmFriendRequest: rules.isAuthenticatedUser,
   },
+})
+
+// Set IsActive On Every Request to true
+const UserActivity = {
+  // We need To return User Null instead of throwing error
+  returnUserNull: rule()(() => {
+    return true
+  }),
+
+  isActiveUser: rule()(async (__parent, _args, context) => {
+    const userId = parseInt(getUserId(context))
+    const User = await prisma.user.findOne({ where: { id: userId } })
+    let isActive: boolean
+    let Time = format(new Date())
+    if (userId) {
+      await prisma.user.update({
+        where: { id: User.id },
+        data: { isActive: true, lastSeen: Time },
+      })
+      isActive = true
+    }
+    return isActive
+  }),
+}
+export const UserActivityCheck = shield({
+  Query: {
+    CurrentUser: or(UserActivity.isActiveUser, UserActivity.returnUserNull),
+  },
+  Mutation: {},
 })

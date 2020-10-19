@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = "***"
 }
 
 model User {
@@ -53,11 +53,10 @@ model Messages {
 
 model FriendsRequest {
   id                Int      @id @default(autoincrement())
-  sender              User     @relation("RequestSender", fields: [RequsetSenderId], references: [id])
+  from              User     @relation("RequestSender", fields: [RequsetSenderId], references: [id])
   RequsetSenderId   Int
-  reciever                User     @relation("RequestReciever", fields: [RequestReceiverId], references: [id])
+  to                User     @relation("RequestReciever", fields: [RequestReceiverId], references: [id])
   RequestReceiverId Int
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
-

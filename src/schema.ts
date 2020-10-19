@@ -2,7 +2,7 @@ import { nexusSchemaPrisma } from 'nexus-plugin-prisma/schema'
 import * as nexus from '@nexus/schema'
 import { join } from 'path'
 import { Context } from './types'
-import { User, AuthPayload, Message } from './resolvers/Models'
+import { User, AuthPayload, Message ,FriendsRequests,FriendsPayload} from './resolvers/Models'
 import { Query } from './resolvers/Query'
 import { Mutation } from './resolvers/Mutation'
 // import { Subscription } from './resolvers/Subscription'
@@ -12,10 +12,11 @@ const nexusPrisma = nexusSchemaPrisma({
   shouldGenerateArtifacts: true,
   experimentalCRUD: true,
   paginationStrategy: 'relay',
+
 })
 
 export const schema = nexus.makeSchema({
-  types: [User, Query, Mutation, AuthPayload, Message],
+  types: [User, Query, Mutation, AuthPayload, Message, FriendsRequests,FriendsPayload],
   plugins: [nexusPrisma, nexus.connectionPlugin()],
   outputs: {
     typegen: join(__dirname, 'generated', 'index.d.ts'),

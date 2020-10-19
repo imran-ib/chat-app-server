@@ -7,10 +7,12 @@ import { Hash, ComparePassword } from '../utils/HashPassword'
 import { hotp, authenticator } from 'otplib'
 import { Mails } from '../utils/Mails/SendMail'
 import { uid } from 'rand-token'
+import { prisma } from 'nexus-plugin-prisma'
 
 export const Mutation = nexus.mutationType({
   definition(t) {
     t.crud.deleteManyUser()
+    t.crud.deleteManyMessages()
     t.field('CreateUser', {
       type: 'AuthPayload',
       args: {
@@ -75,7 +77,7 @@ export const Mutation = nexus.mutationType({
       type: 'AuthPayload',
       args: {
         emailOrUsername: nexus.stringArg({ required: true }),
-        password: nexus.stringArg({ required: true }),
+        password: nexus.stringArg(),
       },
       //@ts-ignore
       resolve: async (_root, { emailOrUsername, password }, ctx) => {
@@ -88,6 +90,10 @@ export const Mutation = nexus.mutationType({
             },
           })
           if (!user) return new AuthenticationError(`User not Found`)
+          // If no password then it means they are registered with social media
+          if (!user.password)
+            return new AuthenticationError(`Try Logging in with Social Media `)
+
           const isValidPassword = await ComparePassword(password, user.password)
           if (!isValidPassword) return new AuthenticationError('Wrong Password')
 
@@ -294,7 +300,7 @@ export const Mutation = nexus.mutationType({
         }
       },
     })
-    t.field('SentMessage', {
+    t.field('SendMessage', {
       type: 'Messages',
       args: {
         Sender: nexus.stringArg({
@@ -306,11 +312,9 @@ export const Mutation = nexus.mutationType({
           description: 'User who receive Message',
         }),
         content: nexus.stringArg({
-          default: 'Empty Message',
           description: 'Content Of Message. text, emoji etc..',
         }),
         image: nexus.stringArg({
-          default: 'No Image to display',
           description: 'If User send image as message',
         }),
       },
@@ -346,5 +350,170 @@ export const Mutation = nexus.mutationType({
         }
       },
     })
+    t.field('GoogleAuth', {
+      type: 'AuthPayload',
+      args: {
+        email: nexus.stringArg(),
+        images: nexus.stringArg(),
+        googleId: nexus.stringArg(),
+      },
+      description: 'Log User in With Google',
+      //@ts-ignore
+      resolve: async (_root, { email, images, googleId }, ctx) => {
+        try {
+          let user
+          const [UserExists] = await ctx.prisma.user.findMany({
+            where: {
+              OR: [
+                {
+                  email: email,
+                },
+                {
+                  username: email,
+                },
+              ],
+            },
+          })
+          if (UserExists) user = UserExists
+          if (!UserExists) {
+            user = await ctx.prisma.user.create({
+              data: {
+                email: email,
+                username: email,
+                avatar: images,
+                googleId,
+              },
+            })
+          }
+
+          if (!user) return new Error(`Cannot Log you in`)
+          const token = jwt.sign({ userId: user.id }, process.env.APP_SECRET, {
+            expiresIn: '7d',
+            mutatePayload: true,
+            subject: 'Auth Token',
+            header: { username: user?.username, userEmail: user.email },
+            issuer: `${user.username}`,
+          })
+          return {
+            user,
+            token,
+          }
+        } catch (error) {
+          return new AuthenticationError(error.message)
+        }
+      },
+    })
+    t.field('SetUserInactive', {
+      type: 'String',
+      args: { id: nexus.intArg({ required: true }) },
+      //@ts-ignore
+      resolve: async (_root, { id }, ctx) => {
+        try {
+          await ctx.prisma.user.update({
+            where: { id },
+            data: { isActive: false },
+          })
+          return `User is Set To InActive`
+        } catch (error) {
+          return new AuthenticationError(error.message)
+        }
+      },
+    })
+    t.field('AddFriend', {
+      type:"String",
+      args:{id: nexus.intArg({required: true})},
+      //@ts-ignore
+      resolve:async(_root , {id} , ctx)=> {
+      
+        try {
+          const userId:number = parseInt(getUserId(ctx))
+          
+          if(userId === id) return new Error(`You cannot add yourself friend`)
+         const [user] = await ctx.prisma.user.findMany({
+           where:{
+             AND:[
+               {
+                 id: userId
+               },
+               {
+                 friends:{
+                   some:{
+                      id: id
+                   }
+                 }
+               }
+             ]
+           }
+         })
+         if(user) return new Error(`User is Already Friend`)
+          
+          await ctx.prisma.user.update({
+            where:{id: userId},
+            data:{
+
+              friends:{
+                connect:{
+                  id
+                },
+
+              }
+              
+            }
+
+          })
+          
+          await ctx.prisma.friendsRequest.create({
+            data:{
+              reciever:{
+                connect:{
+                  id
+                }
+              },
+              sender:{
+                connect:{
+                  id : userId
+                }
+              }
+            }
+          })
+          return `Friend Added `
+          
+        } catch (error) {
+          return new UserInputError(error.message)
+        }
+      }
+
+    }),
+    t.field("ConfirmFriendRequest" , {
+      type: "String",
+      args:{id : nexus.intArg({required: true})},
+      //@ts-ignore
+      resolve: async (_root , {id} , ctx) => {
+        try {
+          const Request = await ctx.prisma.friendsRequest.findOne({where:{id}})
+          if(!Request) return new Error(`Request Not Found`)
+          await ctx.prisma.user.update({
+            where:{
+              id: Request.RequestReceiverId
+            }, data:{
+              
+              friends:{
+                connect:{
+                  id: Request.RequsetSenderId
+                }
+              }
+            }
+          })
+          await ctx.prisma.friendsRequest.delete({where:{id}})
+
+          return `Friend Added`
+          
+        } catch (error) {
+          return new UserInputError(error.message)
+          
+        }
+      }
+    })
   },
+
 })
