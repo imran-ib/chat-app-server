@@ -26,6 +26,7 @@ export const permissions = shield({
     AddFriend: rules.isAuthenticatedUser,
     ConfirmFriendRequest: rules.isAuthenticatedUser,
   },
+  
 })
 
 // Set IsActive On Every Request to true

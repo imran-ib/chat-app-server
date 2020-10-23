@@ -1,13 +1,18 @@
 import * as nexus from '@nexus/schema'
 import * as jwt from 'jsonwebtoken'
 import { getUserId } from '../utils'
-import { AuthenticationError, UserInputError } from 'apollo-server'
+import {
+  AuthenticationError,
+  ForbiddenError,
+  UserInputError,
+} from 'apollo-server'
 import { validateEmail } from '../utils/ValidateEmail'
 import { Hash, ComparePassword } from '../utils/HashPassword'
 import { hotp, authenticator } from 'otplib'
 import { Mails } from '../utils/Mails/SendMail'
 import { uid } from 'rand-token'
 import { prisma } from 'nexus-plugin-prisma'
+import { resolve } from 'path'
 
 export const Mutation = nexus.mutationType({
   definition(t) {
@@ -344,6 +349,7 @@ export const Mutation = nexus.mutationType({
             },
           })
           if (!NewMessage) return new UserInputError(`Can not Send Message `)
+          ctx.pubsub.publish('NewMessage', NewMessage)
           return NewMessage
         } catch (error) {
           return new AuthenticationError(error.message)
@@ -420,100 +426,174 @@ export const Mutation = nexus.mutationType({
       },
     })
     t.field('AddFriend', {
-      type:"String",
-      args:{id: nexus.intArg({required: true})},
+      type: 'String',
+      args: { id: nexus.intArg({ required: true }) },
       //@ts-ignore
-      resolve:async(_root , {id} , ctx)=> {
-      
+      resolve: async (_root, { id }, ctx) => {
         try {
-          const userId:number = parseInt(getUserId(ctx))
-          
-          if(userId === id) return new Error(`You cannot add yourself friend`)
-         const [user] = await ctx.prisma.user.findMany({
-           where:{
-             AND:[
-               {
-                 id: userId
-               },
-               {
-                 friends:{
-                   some:{
-                      id: id
-                   }
-                 }
-               }
-             ]
-           }
-         })
-         if(user) return new Error(`User is Already Friend`)
-          
-          await ctx.prisma.user.update({
-            where:{id: userId},
-            data:{
+          const userId: number = parseInt(getUserId(ctx))
 
-              friends:{
-                connect:{
-                  id
+          if (userId === id) return new Error(`You cannot add yourself friend`)
+          const [user] = await ctx.prisma.user.findMany({
+            where: {
+              AND: [
+                {
+                  id: userId,
                 },
-
-              }
-              
-            }
-
+                {
+                  friends: {
+                    some: {
+                      id: id,
+                    },
+                  },
+                },
+              ],
+            },
           })
-          
-          await ctx.prisma.friendsRequest.create({
-            data:{
-              reciever:{
-                connect:{
-                  id
-                }
+          if (user) return new Error(`User is Already Friend`)
+
+          await ctx.prisma.user.update({
+            where: { id: userId },
+            data: {
+              friends: {
+                connect: {
+                  id,
+                },
               },
-              sender:{
-                connect:{
-                  id : userId
-                }
-              }
-            }
+            },
+          })
+
+          await ctx.prisma.friendsRequest.create({
+            data: {
+              reciever: {
+                connect: {
+                  id,
+                },
+              },
+              sender: {
+                connect: {
+                  id: userId,
+                },
+              },
+            },
           })
           return `Friend Added `
-          
         } catch (error) {
           return new UserInputError(error.message)
         }
-      }
-
+      },
     }),
-    t.field("ConfirmFriendRequest" , {
-      type: "String",
-      args:{id : nexus.intArg({required: true})},
-      //@ts-ignore
-      resolve: async (_root , {id} , ctx) => {
-        try {
-          const Request = await ctx.prisma.friendsRequest.findOne({where:{id}})
-          if(!Request) return new Error(`Request Not Found`)
-          await ctx.prisma.user.update({
-            where:{
-              id: Request.RequestReceiverId
-            }, data:{
-              
-              friends:{
-                connect:{
-                  id: Request.RequsetSenderId
-                }
-              }
-            }
-          })
-          await ctx.prisma.friendsRequest.delete({where:{id}})
+      t.field('ConfirmFriendRequest', {
+        type: 'String',
+        args: { id: nexus.intArg({ required: true }) },
+        //@ts-ignore
+        resolve: async (_root, { id }, ctx) => {
+          try {
+            const Request = await ctx.prisma.friendsRequest.findOne({
+              where: { id },
+            })
+            if (!Request) return new Error(`Request Not Found`)
+            await ctx.prisma.user.update({
+              where: {
+                id: Request.RequestReceiverId,
+              },
+              data: {
+                friends: {
+                  connect: {
+                    id: Request.RequsetSenderId,
+                  },
+                },
+              },
+            })
+            await ctx.prisma.friendsRequest.delete({ where: { id } })
 
-          return `Friend Added`
-          
+            return `Friend Added`
+          } catch (error) {
+            return new UserInputError(error.message)
+          }
+        },
+      })
+    t.field('CreateReaction', {
+      type: 'Reaction',
+      args: {
+        messageId: nexus.intArg({ required: true }),
+        content: nexus.stringArg({ required: true }),
+      },
+      description: 'React To Message',
+      //@ts-ignore
+      resolve: async (_root, { messageId, content }, ctx) => {
+        try {
+          const userId = getUserId(ctx)
+          if (!userId) return new AuthenticationError('Unauthorized')
+          const user = await ctx.prisma.user.findOne({
+            where: { id: parseInt(userId) },
+          })
+          if (!user) return new AuthenticationError(`User not Found`)
+          const CONTENTS = ['❤️', '😄', '😲', '😢', '😡', '👍', '👎']
+          if (!CONTENTS.includes(content)) return new Error(`InValid Content`)
+          const Message = await ctx.prisma.messages.findOne({
+            where: { id: messageId },
+          })
+
+          if (!Message) return new UserInputError(`Message not found`)
+          // user is allowed to react on message that they sent or received
+          if (Message.SenderId !== user.id && Message.ReceiverId !== user.id) {
+            return new ForbiddenError(`Not Allowed`)
+          }
+
+          let [Reaction] = await ctx.prisma.reaction.findMany({
+            where: {
+              AND: [
+                {
+                  messageId: Message.id,
+                },
+                {
+                  userId: user.id,
+                },
+              ],
+            },
+          })
+
+          if (Reaction) {
+            await ctx.prisma.reaction.update({
+              where: { id: Reaction.id },
+              data: {
+                content,
+                message: {
+                  connect: {
+                    id: Message.id,
+                  },
+                },
+                user: {
+                  connect: {
+                    id: user.id,
+                  },
+                },
+              },
+            })
+          } else {
+            Reaction = await ctx.prisma.reaction.create({
+              data: {
+                content,
+                message: {
+                  connect: {
+                    id: Message.id,
+                  },
+                },
+                user: {
+                  connect: {
+                    id: user.id,
+                  },
+                },
+              },
+            })
+          }
+          ctx.pubsub.publish('ReactionToMessage', Reaction)
+          return Reaction
         } catch (error) {
-          return new UserInputError(error.message)
-          
+          return new AuthenticationError(error.message)
         }
-      }
+      },
     })
   },
-
 })

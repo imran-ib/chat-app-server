@@ -65,28 +65,28 @@ export const Query = nexus.queryType({
         }
       },
     })
-  t.field('Friends' , {
-    type: "User",
+    t.field('Friends', {
+      type: 'User',
 
-    nullable: true,
-    //@ts-ignore
-    resolve: async (_root, __args, ctx) =>{
-      try {
-        const userId = parseInt(getUserId(ctx))
-     
-        if(!userId) return new Error(`User not found`)
-return ctx.prisma.user.findOne({
-          include:{ MessagesRecieved:true, MessagesSent: true, friends: true},
-          where:{id: userId} 
-        });
+      nullable: true,
+      //@ts-ignore
+      resolve: async (_root, __args, ctx) => {
+        try {
+          const userId = parseInt(getUserId(ctx))
 
-
-        
-      } catch (error) {
-        return new AuthenticationError(error.message)
-      }
-    }
-    
-  })
+          if (!userId) return new Error(`User not found`)
+          return ctx.prisma.user.findOne({
+            include: {
+              MessagesRecieved: true,
+              MessagesSent: true,
+              friends: true,
+            },
+            where: { id: userId },
+          })
+        } catch (error) {
+          return new AuthenticationError(error.message)
+        }
+      },
+    })
   },
 })

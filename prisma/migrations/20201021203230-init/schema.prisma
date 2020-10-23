@@ -31,6 +31,7 @@ model User {
   friendId                 Int?
   isActive                 Boolean          @default(false)
   lastSeen                 String?
+  reactions                Reaction[]       
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt
 }
@@ -46,6 +47,19 @@ model Messages {
   isSenderFriend     Boolean  @default(false)
   isSenderFollowing  Boolean  @default(false)
   isSenderFollowedBy Boolean  @default(false)
+  reactions          Reaction[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+}
+ 
+model Reaction {
+  id                 Int      @id @default(autoincrement())
+  user               User     @relation(fields: [userId], references: [id])
+  userId             Int
+  message            Messages @relation(fields:[messageId] , references:[id])
+  messageId          Int
+  content            String
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -60,3 +74,4 @@ model FriendsRequest {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
+
