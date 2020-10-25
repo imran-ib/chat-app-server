@@ -12,7 +12,11 @@ import {
 } from './resolvers/Models'
 import { Query } from './resolvers/Query'
 import { Mutation } from './resolvers/Mutation'
-import { Subscription, ReactionSubscription } from './resolvers/Subscription'
+import {
+  Subscription,
+  ReactionSubscription,
+  FriendRequestSubscription,
+} from './resolvers/Subscription'
 // import { Subscription } from './resolvers/Subscription'
 
 const nexusPrisma = nexusSchemaPrisma({
@@ -34,6 +38,7 @@ export const schema = nexus.makeSchema({
     FriendsPayload,
     Subscription,
     ReactionSubscription,
+    FriendRequestSubscription,
   ],
   plugins: [nexusPrisma, nexus.connectionPlugin()],
   outputs: {

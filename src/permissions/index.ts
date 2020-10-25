@@ -20,13 +20,14 @@ export const permissions = shield({
   Query: {
     GetMessages: rules.isAuthenticatedUser,
     Friends: rules.isAuthenticatedUser,
+    GetUsers: rules.isAuthenticatedUser,
+    GetFriendRequests: rules.isAuthenticatedUser,
   },
   Mutation: {
     SendMessage: rules.isAuthenticatedUser,
     AddFriend: rules.isAuthenticatedUser,
     ConfirmFriendRequest: rules.isAuthenticatedUser,
   },
-  
 })
 
 // Set IsActive On Every Request to true

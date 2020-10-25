@@ -37,7 +37,7 @@ export const ReactionSubscription = nexus.subscriptionField(
         const user = ctx.connection.context
         const Message = await prisma.messages.findOne({
           where: { id: parent.messageId },
-        }) 
+        })
         if (user.id === Message.SenderId || user.id === Message.ReceiverId) {
           return true
         } else {
@@ -50,6 +50,35 @@ export const ReactionSubscription = nexus.subscriptionField(
     },
   }
 )
+export const FriendRequestSubscription = nexus.subscriptionField(
+  'FriendRequestSub',
+  {
+    type: 'FriendsRequest',
+    subscribe: withFilter(
+      (_root, _args, ctx) => {
+        return ctx.pubsub.asyncIterator('FriendRequestSub')
+      },
+      //@ts-ignore
+      async (parent, _, ctx) => {
+        const user = ctx.connection.context
+        const [Req] = await ctx.prisma.friendsRequest.findMany({
+          where: {
+            RequestReceiverId: user.id,
+          },
+        })
+        if (Req.RequestReceiverId === parent.RequestReceiverId) {
+          return true
+        } else {
+          return false
+        }
+      }
+    ),
+    resolve(payload) {
+      return payload
+    },
+  }
+)
+
 //ReactionToMessage
 
 // REVIEW another way to write subscriptions

@@ -5,7 +5,12 @@ import { getUserId, getTokenFromReq } from '../utils'
 
 export const Query = nexus.queryType({
   definition(t) {
-    t.crud.users() //TODO Delete this
+    t.crud.users({
+      filtering: true,
+      ordering: true,
+      type: 'User',
+      pagination: true,
+    }) //TODO Delete this
     t.crud.messages() //TODO Delete this
     t.crud.friendsRequests()
     t.field('CurrentUser', {
@@ -39,6 +44,8 @@ export const Query = nexus.queryType({
           const Sender = await ctx.prisma.user.findOne({
             where: { username: from },
           })
+
+
 
           if (!Sender) return new AuthenticationError(`User Not Found`)
           if (user.id === Sender.id)
@@ -82,6 +89,75 @@ export const Query = nexus.queryType({
               friends: true,
             },
             where: { id: userId },
+          })
+        } catch (error) {
+          return new AuthenticationError(error.message)
+        }
+      },
+    })
+    t.field('GetUsers', {
+      type: 'User',
+      list: true,
+      args: { emailOrUsername: nexus.stringArg({ required: true }) },
+      //@ts-ignore
+      resolve: async (_root, { emailOrUsername }, ctx) => {
+        try {
+          const userId = parseInt(getUserId(ctx))
+          const CurrentUser = await ctx.prisma.user.findOne({
+            select: { friends: true },
+            where: { id: userId },
+          })
+          
+
+          const Friends = CurrentUser.friends.map((f) => f.username)
+
+          return ctx.prisma.user.findMany({
+            where: {
+              AND: [
+                {
+                  OR: [
+                    {
+                      email: { contains: emailOrUsername },
+                    },
+                    {
+                      username: { contains: emailOrUsername },
+                    },
+                  ],
+                },
+                {
+                  NOT: [
+                    {
+                      id: userId,
+                    },
+                    {
+                      username: {
+                        in: Friends,
+                      },
+                    },
+                  ],
+                },
+              ],
+              //TODO filter out users friends
+            },
+          })
+        } catch (error) {
+          return new AuthenticationError(error.message)
+        }
+      },
+    })
+    t.field('GetFriendRequests', {
+      type: 'FriendsRequest',
+      list: true,
+      nullable: true,
+      // @ts-ignore
+      resolve: (_root, __args, ctx) => {
+        try {
+          const userId = parseInt(getUserId(ctx))
+
+          return ctx.prisma.friendsRequest.findMany({
+            where: {
+              RequestReceiverId: userId,
+            },
           })
         } catch (error) {
           return new AuthenticationError(error.message)

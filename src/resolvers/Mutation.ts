@@ -18,6 +18,7 @@ export const Mutation = nexus.mutationType({
   definition(t) {
     t.crud.deleteManyUser()
     t.crud.deleteManyMessages()
+    t.crud.deleteManyFriendsRequest()
     t.field('CreateUser', {
       type: 'AuthPayload',
       args: {
@@ -452,6 +453,17 @@ export const Mutation = nexus.mutationType({
           })
           if (user) return new Error(`User is Already Friend`)
 
+          const Requests = await ctx.prisma.friendsRequest.findMany({
+            where: {
+              RequestReceiverId: id,
+            },
+          })
+          // If there are any old requests delete them
+          if (Requests.length > 0)
+            await ctx.prisma.friendsRequest.deleteMany({
+              where: { RequestReceiverId: id },
+            })
+          // Add Friend
           await ctx.prisma.user.update({
             where: { id: userId },
             data: {
@@ -462,8 +474,8 @@ export const Mutation = nexus.mutationType({
               },
             },
           })
-
-          await ctx.prisma.friendsRequest.create({
+          //Create new Firend req
+          const NewFriendRequest = await ctx.prisma.friendsRequest.create({
             data: {
               reciever: {
                 connect: {
@@ -477,6 +489,7 @@ export const Mutation = nexus.mutationType({
               },
             },
           })
+          ctx.pubsub.publish('FriendRequestSub', NewFriendRequest)
           return `Friend Added `
         } catch (error) {
           return new UserInputError(error.message)
@@ -492,6 +505,7 @@ export const Mutation = nexus.mutationType({
             const Request = await ctx.prisma.friendsRequest.findOne({
               where: { id },
             })
+
             if (!Request) return new Error(`Request Not Found`)
             await ctx.prisma.user.update({
               where: {
@@ -513,83 +527,124 @@ export const Mutation = nexus.mutationType({
           }
         },
       })
-    t.field('CreateReaction', {
-      type: 'Reaction',
-      args: {
-        messageId: nexus.intArg({ required: true }),
-        content: nexus.stringArg({ required: true }),
-      },
-      description: 'React To Message',
+    t.field('RemoverFriend', {
+      type: 'String',
+      args: { FriendId: nexus.intArg({ required: true }) },
       //@ts-ignore
-      resolve: async (_root, { messageId, content }, ctx) => {
+      resolve: async (_root, { FriendId }, ctx) => {
         try {
-          const userId = getUserId(ctx)
-          if (!userId) return new AuthenticationError('Unauthorized')
-          const user = await ctx.prisma.user.findOne({
-            where: { id: parseInt(userId) },
-          })
-          if (!user) return new AuthenticationError(`User not Found`)
-          const CONTENTS = ['❤️', '😄', '😲', '😢', '😡', '👍', '👎']
-          if (!CONTENTS.includes(content)) return new Error(`InValid Content`)
-          const Message = await ctx.prisma.messages.findOne({
-            where: { id: messageId },
-          })
-
-          if (!Message) return new UserInputError(`Message not found`)
-          // user is allowed to react on message that they sent or received
-          if (Message.SenderId !== user.id && Message.ReceiverId !== user.id) {
-            return new ForbiddenError(`Not Allowed`)
-          }
-
-          let [Reaction] = await ctx.prisma.reaction.findMany({
+          const UserId = parseInt(getUserId(ctx))
+          const User = await ctx.prisma.user.update({
             where: {
-              AND: [
-                {
-                  messageId: Message.id,
+              id: UserId,
+            },
+            data: {
+              friends: {
+                disconnect: {
+                  id: FriendId,
                 },
-                {
-                  userId: user.id,
-                },
-              ],
+              },
             },
           })
+          if (!User) return new Error(`Friend Not Found`)
+          return `Friend Removed`
+        } catch (error) {
+          return new UserInputError(error.message)
+        }
+      },
+    }),
+      t.field('CreateReaction', {
+        type: 'Reaction',
+        args: {
+          messageId: nexus.intArg({ required: true }),
+          content: nexus.stringArg({ required: true }),
+        },
+        description: 'React To Message',
+        //@ts-ignore
+        resolve: async (_root, { messageId, content }, ctx) => {
+          try {
+            const userId = getUserId(ctx)
+            if (!userId) return new AuthenticationError('Unauthorized')
+            const user = await ctx.prisma.user.findOne({
+              where: { id: parseInt(userId) },
+            })
+            if (!user) return new AuthenticationError(`User not Found`)
+            const CONTENTS = ['❤️', '😄', '😲', '😢', '😡', '👍', '👎']
+            if (!CONTENTS.includes(content)) return new Error(`InValid Content`)
+            const Message = await ctx.prisma.messages.findOne({
+              where: { id: messageId },
+            })
 
-          if (Reaction) {
-            await ctx.prisma.reaction.update({
-              where: { id: Reaction.id },
-              data: {
-                content,
-                message: {
-                  connect: {
-                    id: Message.id,
+            if (!Message) return new UserInputError(`Message not found`)
+            // user is allowed to react on message that they sent or received
+            if (
+              Message.SenderId !== user.id &&
+              Message.ReceiverId !== user.id
+            ) {
+              return new ForbiddenError(`Not Allowed`)
+            }
+
+            let [Reaction] = await ctx.prisma.reaction.findMany({
+              where: {
+                AND: [
+                  {
+                    messageId: Message.id,
                   },
-                },
-                user: {
-                  connect: {
-                    id: user.id,
+                  {
+                    userId: user.id,
                   },
-                },
+                ],
               },
             })
-          } else {
-            Reaction = await ctx.prisma.reaction.create({
-              data: {
-                content,
-                message: {
-                  connect: {
-                    id: Message.id,
+
+            if (Reaction) {
+              await ctx.prisma.reaction.update({
+                where: { id: Reaction.id },
+                data: {
+                  content,
+                  message: {
+                    connect: {
+                      id: Message.id,
+                    },
+                  },
+                  user: {
+                    connect: {
+                      id: user.id,
+                    },
                   },
                 },
-                user: {
-                  connect: {
-                    id: user.id,
+              })
+            } else {
+              Reaction = await ctx.prisma.reaction.create({
+                data: {
+                  content,
+                  message: {
+                    connect: {
+                      id: Message.id,
+                    },
+                  },
+                  user: {
+                    connect: {
+                      id: user.id,
+                    },
                   },
                 },
-              },
-            })
+              })
+            }
+            ctx.pubsub.publish('ReactionToMessage', Reaction)
+            return Reaction
+          } catch (error) {
+            return new AuthenticationError(error.message)
           }
-          ctx.pubsub.publish('ReactionToMessage', Reaction)
-          return Reaction
+        },
+      })
+    t.field('SendFriendRequest', {
+      type: 'User',
+      args: { emailOrUsername: nexus.stringArg({ required: true }) },
+      //@ts-ignore
+      resolve: async (_root, { emailOrUsername }, ctx) => {
+        try {
+          //TODO Start from here
         } catch (error) {
           return new AuthenticationError(error.message)
         }
