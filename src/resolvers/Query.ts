@@ -1,34 +1,28 @@
-import * as nexus from '@nexus/schema'
-import { AuthenticationError } from 'apollo-server'
-import { prisma } from 'nexus-plugin-prisma'
-import { getUserId, getTokenFromReq } from '../utils'
+import * as nexus from '@nexus/schema';
+import { AuthenticationError } from 'apollo-server';
+import { getUserId } from '../utils';
 
 export const Query = nexus.queryType({
   definition(t) {
-    t.crud.users({
-      filtering: true,
-      ordering: true,
-      type: 'User',
-      pagination: true,
-    }) //TODO Delete this
-    t.crud.messages() //TODO Delete this
-    t.crud.friendsRequests()
+    t.crud.users(); //TODO Delete this
+    t.crud.messages(); //TODO Delete this
+    t.crud.friendsRequests();
     t.field('CurrentUser', {
       type: 'User',
       nullable: true,
       //@ts-ignore
       resolve: async (_root, _agrs, ctx) => {
-        const userId = parseInt(getUserId(ctx))
-        if (!userId) return
+        const userId = parseInt(getUserId(ctx));
+        if (!userId) return;
 
         return ctx.prisma.user.findOne({
           where: { id: userId },
           include: {
             friends: true,
           },
-        })
+        });
       },
-    })
+    });
     t.field('GetMessages', {
       type: 'Messages',
       list: true,
@@ -37,64 +31,113 @@ export const Query = nexus.queryType({
       //@ts-ignore
       resolve: async (_root, { from }, ctx) => {
         try {
-          const userId = parseInt(getUserId(ctx))
-          if (!userId) return new AuthenticationError(`No User Found`)
-          const user = await ctx.prisma.user.findOne({ where: { id: userId } })
-          if (!user) return new AuthenticationError(`Not Authenticated`)
+          const userId = parseInt(getUserId(ctx));
+          if (!userId) return new AuthenticationError(`No User Found`);
+          const user = await ctx.prisma.user.findOne({ where: { id: userId } });
+          if (!user) return new AuthenticationError(`Not Authenticated`);
           const Sender = await ctx.prisma.user.findOne({
             where: { username: from },
-          })
-
-
-
-          if (!Sender) return new AuthenticationError(`User Not Found`)
+          });
+          if (!Sender) return new AuthenticationError(`User Not Found`);
           if (user.id === Sender.id)
             return new AuthenticationError(
               `Please Select Valid Percipient to retrieve messuages`
-            )
-          const AllMessages = await ctx.prisma.messages.findMany({
-            where: {
-              OR: [
-                {
-                  AND: [{ SenderId: Sender.id }, { ReceiverId: user.id }],
-                },
-                {
-                  AND: [{ SenderId: user.id }, { ReceiverId: Sender.id }],
-                },
-              ],
-            },
-            orderBy: { createdAt: 'asc' },
-          })
+            );
 
-          return AllMessages
+          const [
+            BlockedStatus,
+          ] = await ctx.prisma.temporaryBlockOtherUserOnDeleteChat.findMany({
+            where: {
+              AND: [{ blockerId: user.id }, { blockeeId: Sender.id }],
+            },
+          });
+
+          let AllMessages: [];
+          if (!BlockedStatus) {
+            //@ts-ignore
+            AllMessages = await ctx.prisma.messages.findMany({
+              where: {
+                OR: [
+                  {
+                    AND: [{ SenderId: Sender.id }, { ReceiverId: user.id }],
+                  },
+                  {
+                    AND: [{ SenderId: user.id }, { ReceiverId: Sender.id }],
+                  },
+                ],
+              },
+              orderBy: { createdAt: 'asc' },
+            });
+          } else {
+            AllMessages = [];
+          }
+          // console.log('definition -> AllMessages', AllMessages)
+
+          return AllMessages;
         } catch (error) {
-          return new AuthenticationError(error.message)
+          return new AuthenticationError(error.message);
         }
       },
-    })
+    });
     t.field('Friends', {
-      type: 'User',
-
+      type: 'Friends',
       nullable: true,
+      list: true,
       //@ts-ignore
       resolve: async (_root, __args, ctx) => {
         try {
-          const userId = parseInt(getUserId(ctx))
+          const userId = parseInt(getUserId(ctx));
 
-          if (!userId) return new Error(`User not found`)
-          return ctx.prisma.user.findOne({
-            include: {
-              MessagesRecieved: true,
-              MessagesSent: true,
-              friends: true,
+          if (!userId) return new Error(`User not found`);
+
+          const Friend = await ctx.prisma.friends.findMany({
+            include: { friend: true },
+            where: {
+              userId,
             },
-            where: { id: userId },
-          })
+          });
+
+          console.log('Friend', Friend);
+
+          return Friend;
         } catch (error) {
-          return new AuthenticationError(error.message)
+          return new AuthenticationError(error.message);
         }
       },
-    })
+    });
+
+    t.field('GetChats', {
+      type: 'Friends',
+      nullable: true,
+      list: true,
+
+      //@ts-ignore
+      resolve: async (_root, __args, ctx) => {
+        try {
+          const userId = parseInt(getUserId(ctx));
+          if (!userId) return new Error(`User not found`);
+          const Friends = await ctx.prisma.friends.findMany({
+            where: { userId: userId },
+            include: {
+              friend: {
+                include: { MessagesRecieved: true, MessagesSent: true },
+              },
+            },
+          });
+
+          const users = Friends.filter((fr) => {
+            return (
+              fr.friend.MessagesSent.length > 0 ||
+              fr.friend.MessagesRecieved.length > 0
+            );
+          });
+
+          return users;
+        } catch (error) {
+          return new AuthenticationError(error.message);
+        }
+      },
+    });
     t.field('GetUsers', {
       type: 'User',
       list: true,
@@ -102,14 +145,15 @@ export const Query = nexus.queryType({
       //@ts-ignore
       resolve: async (_root, { emailOrUsername }, ctx) => {
         try {
-          const userId = parseInt(getUserId(ctx))
-          const CurrentUser = await ctx.prisma.user.findOne({
-            select: { friends: true },
-            where: { id: userId },
-          })
-          
+          const userId = parseInt(getUserId(ctx));
 
-          const Friends = CurrentUser.friends.map((f) => f.username)
+          const Friends = await ctx.prisma.friends.findMany({
+            where: {
+              userId,
+            },
+            include: { friend: true, user: true },
+          });
+          const usersnames = Friends.map((fr) => fr.friend.username);
 
           return ctx.prisma.user.findMany({
             where: {
@@ -131,20 +175,19 @@ export const Query = nexus.queryType({
                     },
                     {
                       username: {
-                        in: Friends,
+                        in: usersnames,
                       },
                     },
                   ],
                 },
               ],
-              //TODO filter out users friends
             },
-          })
+          });
         } catch (error) {
-          return new AuthenticationError(error.message)
+          return new AuthenticationError(error.message);
         }
       },
-    })
+    });
     t.field('GetFriendRequests', {
       type: 'FriendsRequest',
       list: true,
@@ -152,17 +195,48 @@ export const Query = nexus.queryType({
       // @ts-ignore
       resolve: (_root, __args, ctx) => {
         try {
-          const userId = parseInt(getUserId(ctx))
+          const userId = parseInt(getUserId(ctx));
 
           return ctx.prisma.friendsRequest.findMany({
             where: {
               RequestReceiverId: userId,
             },
-          })
+          });
         } catch (error) {
-          return new AuthenticationError(error.message)
+          return new AuthenticationError(error.message);
         }
       },
-    })
+    });
+    t.field('GetUsersBlockedStatus', {
+      type: 'temporaryBlockOtherUserOnDeleteChat',
+      args: { username: nexus.stringArg({ required: true }) },
+
+      nullable: true,
+      //@ts-ignore
+      resolve: async (_root, { username }, ctx) => {
+        const userId = parseInt(getUserId(ctx));
+        const user = await ctx.prisma.user.findOne({ where: { id: userId } });
+        const otherUser = await ctx.prisma.user.findOne({
+          where: { username },
+        });
+
+        const [
+          isBlocked,
+        ] = await ctx.prisma.temporaryBlockOtherUserOnDeleteChat.findMany({
+          where: {
+            AND: [
+              {
+                blockerId: user.id,
+              },
+              {
+                blockeeId: otherUser.id,
+              },
+            ],
+          },
+        });
+
+        return isBlocked;
+      },
+    });
   },
-})
+});

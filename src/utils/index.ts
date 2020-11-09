@@ -41,3 +41,4 @@ export const getCookieFromReq = (req: Request, cookieKey: string): string => {
     return ''
   }
 }
+

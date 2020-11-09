@@ -559,6 +559,77 @@
     {
       "tag": "CreateField",
       "model": "User",
+      "field": "temporaryBlockOtherUserOnDeleteChatBlocker",
+      "type": "temporaryBlockOtherUserOnDeleteChat",
+      "arity": "List"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "User",
+          "field": "temporaryBlockOtherUserOnDeleteChatBlocker"
+        },
+        "directive": "relation"
+      }
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "User",
+          "field": "temporaryBlockOtherUserOnDeleteChatBlocker"
+        },
+        "directive": "relation"
+      },
+      "argument": "",
+      "value": "\"ChatMessageSender\""
+    },
+    {
+      "tag": "CreateField",
+      "model": "User",
+      "field": "temporaryBlockOtherUserOnDeleteChatBlockee",
+      "type": "temporaryBlockOtherUserOnDeleteChat",
+      "arity": "List"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "User",
+          "field": "temporaryBlockOtherUserOnDeleteChatBlockee"
+        },
+        "directive": "relation"
+      }
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "User",
+          "field": "temporaryBlockOtherUserOnDeleteChatBlockee"
+        },
+        "directive": "relation"
+      },
+      "argument": "",
+      "value": "\"ChatMessageReceiver\""
+    },
+    {
+      "tag": "CreateField",
+      "model": "User",
+      "field": "BlockedMessagesIds",
+      "type": "Int",
+      "arity": "List"
+    },
+    {
+      "tag": "CreateField",
+      "model": "User",
       "field": "createdAt",
       "type": "DateTime",
       "arity": "Required"
@@ -601,6 +672,237 @@
         "path": {
           "tag": "Field",
           "model": "User",
+          "field": "updatedAt"
+        },
+        "directive": "updatedAt"
+      }
+    },
+    {
+      "tag": "CreateModel",
+      "model": "temporaryBlockOtherUserOnDeleteChat"
+    },
+    {
+      "tag": "CreateField",
+      "model": "temporaryBlockOtherUserOnDeleteChat",
+      "field": "id",
+      "type": "Int",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "id"
+        },
+        "directive": "id"
+      }
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "id"
+        },
+        "directive": "default"
+      }
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "id"
+        },
+        "directive": "default"
+      },
+      "argument": "",
+      "value": "autoincrement()"
+    },
+    {
+      "tag": "CreateField",
+      "model": "temporaryBlockOtherUserOnDeleteChat",
+      "field": "blocker",
+      "type": "User",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "blocker"
+        },
+        "directive": "relation"
+      }
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "blocker"
+        },
+        "directive": "relation"
+      },
+      "argument": "",
+      "value": "\"ChatMessageSender\""
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "blocker"
+        },
+        "directive": "relation"
+      },
+      "argument": "fields",
+      "value": "[blockerId]"
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "blocker"
+        },
+        "directive": "relation"
+      },
+      "argument": "references",
+      "value": "[id]"
+    },
+    {
+      "tag": "CreateField",
+      "model": "temporaryBlockOtherUserOnDeleteChat",
+      "field": "blockerId",
+      "type": "Int",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateField",
+      "model": "temporaryBlockOtherUserOnDeleteChat",
+      "field": "blockee",
+      "type": "User",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "blockee"
+        },
+        "directive": "relation"
+      }
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "blockee"
+        },
+        "directive": "relation"
+      },
+      "argument": "",
+      "value": "\"ChatMessageReceiver\""
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "blockee"
+        },
+        "directive": "relation"
+      },
+      "argument": "fields",
+      "value": "[blockeeId]"
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "blockee"
+        },
+        "directive": "relation"
+      },
+      "argument": "references",
+      "value": "[id]"
+    },
+    {
+      "tag": "CreateField",
+      "model": "temporaryBlockOtherUserOnDeleteChat",
+      "field": "blockeeId",
+      "type": "Int",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateField",
+      "model": "temporaryBlockOtherUserOnDeleteChat",
+      "field": "createdAt",
+      "type": "DateTime",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "createdAt"
+        },
+        "directive": "default"
+      }
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
+          "field": "createdAt"
+        },
+        "directive": "default"
+      },
+      "argument": "",
+      "value": "now()"
+    },
+    {
+      "tag": "CreateField",
+      "model": "temporaryBlockOtherUserOnDeleteChat",
+      "field": "updatedAt",
+      "type": "DateTime",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "temporaryBlockOtherUserOnDeleteChat",
           "field": "updatedAt"
         },
         "directive": "updatedAt"
@@ -891,6 +1193,38 @@
           "tag": "Field",
           "model": "Messages",
           "field": "isSenderFollowedBy"
+        },
+        "directive": "default"
+      },
+      "argument": "",
+      "value": "false"
+    },
+    {
+      "tag": "CreateField",
+      "model": "Messages",
+      "field": "forwarded",
+      "type": "Boolean",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "Messages",
+          "field": "forwarded"
+        },
+        "directive": "default"
+      }
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "Messages",
+          "field": "forwarded"
         },
         "directive": "default"
       },

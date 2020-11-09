@@ -1,7 +1,7 @@
-import { nexusSchemaPrisma } from 'nexus-plugin-prisma/schema'
-import * as nexus from '@nexus/schema'
-import { join } from 'path'
-import { Context } from './types'
+import { nexusSchemaPrisma } from 'nexus-plugin-prisma/schema';
+import * as nexus from '@nexus/schema';
+import { join } from 'path';
+import { Context } from './types';
 import {
   User,
   AuthPayload,
@@ -9,14 +9,18 @@ import {
   FriendsRequests,
   FriendsPayload,
   Reaction,
-} from './resolvers/Models'
-import { Query } from './resolvers/Query'
-import { Mutation } from './resolvers/Mutation'
+  TemporaryBlockOtherUserOnDeleteChat,
+  MessagePayload,
+  Friends,
+} from './resolvers/Models';
+import { Query } from './resolvers/Query';
+import { Mutation } from './resolvers/Mutation';
 import {
   Subscription,
   ReactionSubscription,
   FriendRequestSubscription,
-} from './resolvers/Subscription'
+  DeleteMessageSubscription,
+} from './resolvers/Subscription';
 // import { Subscription } from './resolvers/Subscription'
 
 const nexusPrisma = nexusSchemaPrisma({
@@ -24,7 +28,7 @@ const nexusPrisma = nexusSchemaPrisma({
   shouldGenerateArtifacts: true,
   experimentalCRUD: true,
   paginationStrategy: 'relay',
-})
+});
 
 export const schema = nexus.makeSchema({
   types: [
@@ -35,10 +39,14 @@ export const schema = nexus.makeSchema({
     Message,
     FriendsRequests,
     Reaction,
+    Friends,
+    TemporaryBlockOtherUserOnDeleteChat,
+    MessagePayload,
     FriendsPayload,
     Subscription,
     ReactionSubscription,
     FriendRequestSubscription,
+    DeleteMessageSubscription,
   ],
   plugins: [nexusPrisma, nexus.connectionPlugin()],
   outputs: {
@@ -59,4 +67,4 @@ export const schema = nexus.makeSchema({
     ],
     contextType: 'ctx.Context',
   },
-})
+});

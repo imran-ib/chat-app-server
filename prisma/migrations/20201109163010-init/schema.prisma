@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = "***"
 }
 
 model User {
@@ -39,10 +39,8 @@ model User {
 
 model Friends {
   id                      Int      @id @default(autoincrement())
-  friend                  User     @relation(name:"friend",fields: [friendId], references: [id])
-  user                    User     @relation(fields: [userId], references: [id])
-  friendId                Int
-  userId                  Int
+  friend                    User     @relation(fields: [friendId], references: [id])
+  friendId                 Int
 }
 
 

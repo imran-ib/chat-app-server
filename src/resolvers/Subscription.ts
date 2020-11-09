@@ -78,6 +78,29 @@ export const FriendRequestSubscription = nexus.subscriptionField(
     },
   }
 )
+export const DeleteMessageSubscription = nexus.subscriptionField(
+  'DeleteMessageSub',
+  {
+    type: 'Messages',
+    subscribe: withFilter(
+      (_root, _args, ctx) => {
+        return ctx.pubsub.asyncIterator('DeleteMessageSub')
+      },
+      //@ts-ignore
+      async (parent, _, ctx) => {
+        const user = ctx.connection.context
+        if (user.id === parent.SenderId || user.id === parent.ReceiverId) {
+          return true
+        } else {
+          return false
+        }
+      }
+    ),
+    resolve(payload) {
+      return payload
+    },
+  }
+)
 
 //ReactionToMessage
 
