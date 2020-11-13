@@ -112,8 +112,6 @@ export const Query = nexus.queryType({
             },
           });
 
-          console.log('Friend', Friend);
-
           return Friend;
         } catch (error) {
           return new AuthenticationError(error.message);

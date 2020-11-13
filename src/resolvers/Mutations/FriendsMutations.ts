@@ -1,16 +1,6 @@
 import * as nexus from '@nexus/schema';
-import * as jwt from 'jsonwebtoken';
 import { getUserId } from '../../utils';
-import {
-  AuthenticationError,
-  ForbiddenError,
-  UserInputError,
-} from 'apollo-server';
-import { validateEmail } from '../../utils/ValidateEmail';
-import { Hash, ComparePassword } from '../../utils/HashPassword';
-import { hotp, authenticator } from 'otplib';
-import { Mails } from '../../utils/Mails/SendMail';
-import { uid } from 'rand-token';
+import { UserInputError } from 'apollo-server';
 
 export const FriendsMutations = (
   t: nexus.core.ObjectDefinitionBlock<'Mutation'>
@@ -113,14 +103,13 @@ export const FriendsMutations = (
               ],
             },
           });
-          console.log('Requests', Requests);
 
           // If there are any old requests delete them
           if (Requests.length > 0)
             await ctx.prisma.friendsRequest.deleteMany({
               where: { RequestReceiverId: FriendId },
             });
-          const Friend = await ctx.prisma.friends.findMany({
+          await ctx.prisma.friends.deleteMany({
             where: {
               AND: [
                 {
@@ -132,7 +121,6 @@ export const FriendsMutations = (
               ],
             },
           });
-          console.log('Friend', Friend);
 
           // if (!User) return new Error(`Friend Not Found`);
           return `Friend Removed`;
