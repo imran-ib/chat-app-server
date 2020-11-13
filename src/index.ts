@@ -18,6 +18,7 @@ interface Token {
 }
 
 const server = new ApolloServer({
+  // User Activity is not being used for now
   schema: applyMiddleware(schema, permissions, UserActivityCheck),
   // schema,
   context: createContext,

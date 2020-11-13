@@ -23,6 +23,9 @@ export const permissions = shield({
     GetUsers: rules.isAuthenticatedUser,
     GetChats: rules.isAuthenticatedUser,
     GetFriendRequests: rules.isAuthenticatedUser,
+    OtherUser: rules.isAuthenticatedUser,
+    GetUsersMedia: rules.isAuthenticatedUser,
+    GetMediaBetweenUsers: rules.isAuthenticatedUser,
   },
   Mutation: {
     SendMessage: rules.isAuthenticatedUser,

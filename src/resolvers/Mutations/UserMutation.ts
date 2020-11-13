@@ -353,4 +353,22 @@ export const UserMutations = (
       }
     },
   });
+  t.field('UserLastSeen', {
+    type: 'DateTime',
+    nullable: true,
+    description: "Check User's Last Online Status",
+    resolve: async (_root, _args, ctx) => {
+      try {
+        const userId = parseInt(getUserId(ctx));
+        await ctx.prisma.user.update({
+          where: { id: userId },
+          data: {
+            lastSeen: new Date().toISOString(),
+          },
+        });
+      } catch (error) {
+        return new AuthenticationError(error.message);
+      }
+    },
+  });
 };

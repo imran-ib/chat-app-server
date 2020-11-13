@@ -19,6 +19,8 @@ export const User = nexus.objectType({
     t.model.BlockedMessagesIds();
     t.model.temporaryBlockOtherUserOnDeleteChatBlocker();
     t.model.reactions();
+    t.model.lastSeen();
+    t.model.lastTyped();
     t.model.createdAt();
     t.model.updatedAt();
   },
@@ -31,6 +33,22 @@ export const Friends = nexus.objectType({
     t.model.user();
     t.model.friendId();
     t.model.userId();
+  },
+});
+
+export const UsersMedia = nexus.objectType({
+  name: 'UsersMedia',
+  definition(t) {
+    t.model.id();
+    t.model.image();
+    t.model.user();
+    t.model.userId();
+    t.model.Message();
+    t.model.MessageId();
+    t.model.otherUser();
+    t.model.OtherUserId();
+    t.model.createdAt();
+    t.model.updatedAt();
   },
 });
 

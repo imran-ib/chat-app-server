@@ -42,8 +42,6 @@ export const MessagesMutations = (
         if (Sender.trim() === Receiver.trim()) {
           return new UserInputError(`You can not send Message to Yourself`);
         }
-        //TODO if User Deleted chat restore it
-
         const user = await ctx.prisma.user.findOne({
           where: { username: Sender },
         });
@@ -84,6 +82,17 @@ export const MessagesMutations = (
         });
         if (!NewMessage) return new UserInputError(`Can not Send Message `);
         ctx.pubsub.publish('NewMessage', NewMessage);
+        //Create Media if User is sending Image
+        if (image.trim() !== '') {
+          await ctx.prisma.usersMedia.create({
+            data: {
+              Message: { connect: { id: NewMessage.id } },
+              user: { connect: { id: user.id } },
+              otherUser: { connect: { id: OtherUser.id } },
+              image,
+            },
+          });
+        }
         return NewMessage;
       } catch (error) {
         return new AuthenticationError(error.message);
@@ -168,6 +177,11 @@ export const MessagesMutations = (
           await ctx.prisma.reaction.deleteMany({
             where: {
               messageId: MessageId,
+            },
+          });
+          await ctx.prisma.usersMedia.deleteMany({
+            where: {
+              MessageId: Message.id,
             },
           });
 

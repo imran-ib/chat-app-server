@@ -23,6 +23,21 @@ export const Query = nexus.queryType({
         });
       },
     });
+    t.field('OtherUser', {
+      type: 'User',
+      args: { userId: nexus.intArg({ required: true }) },
+      description: 'Refetch Other User To Update Users Online Status',
+      //@ts-ignore
+      resolve: async (_root, { userId }, ctx) => {
+        try {
+          return ctx.prisma.user.findOne({
+            where: { id: userId },
+          });
+        } catch (error) {
+          return new AuthenticationError(error.message);
+        }
+      },
+    });
     t.field('GetMessages', {
       type: 'Messages',
       list: true,
@@ -236,6 +251,74 @@ export const Query = nexus.queryType({
         });
 
         return isBlocked;
+      },
+    });
+    t.field('GetUsersMedia', {
+      type: 'UsersMedia',
+      list: true,
+      nullable: true,
+      //@ts-ignore
+      resolve: async (_root, __args, ctx) => {
+        try {
+          const userId = parseInt(getUserId(ctx));
+          return ctx.prisma.usersMedia.findMany({
+            select: { id: true, image: true },
+            where: {
+              OR: [
+                {
+                  //Sender
+                  userId,
+                },
+                {
+                  //Receiver
+                  OtherUserId: userId,
+                },
+              ],
+            },
+          });
+        } catch (error) {
+          return new AuthenticationError(error.message);
+        }
+      },
+    });
+
+    t.field('GetMediaBetweenUsers', {
+      type: 'UsersMedia',
+      args: {
+        OtherUserId: nexus.intArg({ required: true }),
+      },
+      description: 'Get Media Between Two Users',
+      list: true,
+      nullable: true,
+      //@ts-ignore
+      resolve: async (_root, { OtherUserId }, ctx) => {
+        try {
+          const userId = parseInt(getUserId(ctx));
+          if (userId === OtherUserId)
+            return new Error(`Media Can Be Fetched Between Two Users Only`);
+          return ctx.prisma.usersMedia.findMany({
+            select: { id: true, image: true },
+            where: {
+              OR: [
+                {
+                  AND: [{ userId }, { OtherUserId }],
+                },
+                {
+                  AND: [
+                    {
+                      userId: OtherUserId,
+                    },
+                    {
+                      OtherUserId: userId,
+                    },
+                  ],
+                },
+              ],
+            },
+          });
+        } catch (error) {
+          return new AuthenticationError(error.message);
+        }
       },
     });
   },

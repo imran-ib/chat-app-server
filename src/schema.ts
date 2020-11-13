@@ -12,6 +12,7 @@ import {
   TemporaryBlockOtherUserOnDeleteChat,
   MessagePayload,
   Friends,
+  UsersMedia,
 } from './resolvers/Models';
 import { Query } from './resolvers/Query';
 import { Mutation } from './resolvers/Mutation';
@@ -40,6 +41,7 @@ export const schema = nexus.makeSchema({
     FriendsRequests,
     Reaction,
     Friends,
+    UsersMedia,
     TemporaryBlockOtherUserOnDeleteChat,
     MessagePayload,
     FriendsPayload,
