@@ -319,5 +319,95 @@ export const Query = nexus.queryType({
         }
       },
     });
+    t.field('SearchTermResults', {
+      type: 'Messages',
+      list: true,
+      nullable: true,
+      args: {
+        term: nexus.stringArg({ required: true }),
+      },
+      //@ts-ignore
+      async resolve(root, { term }, ctx) {
+        return ctx.prisma.messages.findMany({
+          where: {
+            content: {
+              contains: term,
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        });
+      },
+    });
   },
 });
+
+// export const SearchTermResults = nexus.queryField((t) => {
+//   t.connectionField('SearchTermResults', {
+//     type: 'Messages',
+//     disableBackwardPagination: true,
+
+//     additionalArgs: {
+//       term: nexus.stringArg({ required: true }),
+//     },
+//     inheritAdditionalArgs: true,
+//     //@ts-ignore
+//     async resolve(root, args, ctx, info) {
+//       await ctx.prisma.messages.findMany({
+//         where: {
+//           OR: [
+//             {
+//               content: {
+//                 contains: args.term,
+//               },
+//             },
+//             {
+//               from: {
+//                 username: { contains: args.term },
+//               },
+//             },
+//             {
+//               to: {
+//                 username: { contains: args.term },
+//               },
+//             },
+//           ],
+//         },
+//         orderBy: { createdAt: 'asc' },
+//       });
+//     },
+//   });
+// });
+/**+
+here: {
+            OR: [
+              {
+                content: {
+                  contains: term,
+                },
+              },
+              {
+                from: {
+                  OR: [
+                    {
+                      username: { contains: term },
+                    },
+                    {
+                      email: { contains: term },
+                    },
+                  ],
+                },
+              },
+              {
+                to: {
+                  OR: [
+                    {
+                          username: { contains: term },
+                    },
+                    {
+                      email: { contains: term },
+                    },
+                  ],
+                },
+              },
+            ],
+          }, */

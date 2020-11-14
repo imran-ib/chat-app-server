@@ -144,7 +144,7 @@ export const MessagesMutations = (
             },
           });
           if (!NewMessage) return new UserInputError(`Can not Send Message `);
-          ctx.pubsub.publish('NewMessage', NewMessage);
+          // ctx.pubsub.publish('NewMessage', NewMessage);
           return NewMessage;
         } catch (error) {
           return new AuthenticationError(error.message);
